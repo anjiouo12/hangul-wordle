@@ -5,9 +5,9 @@ import { disassemble } from "es-hangul";
 import confetti from "canvas-confetti";
 import { ALL_WORDS, getRandomWordByJamoCount } from "./words";
 
-// 요청하신 4줄 키보드 레이아웃 (ㅛ 추가 및 ㅆ-ㅒ 사이 빈 공간 유지)
+// 맨 윗줄: ㅖ 왼쪽에 백스페이스(⌫) 배치
 const KEYBOARD_ROWS = [
-  ["ㅃ", "ㅉ", "ㄸ", "ㄲ", "ㅆ", "", "", "ㅒ", "ㅖ"],
+  ["ㅃ", "ㅉ", "ㄸ", "ㄲ", "ㅆ", "", "ㅒ", "ㅖ", "⌫"],
   ["ㅂ", "ㅈ", "ㄷ", "ㄱ", "ㅅ", "ㅛ", "ㅕ", "ㅑ", "ㅐ", "ㅔ"],
   ["ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ"],
   ["ㅋ", "ㅌ", "ㅍ", "ㅊ", "ㅠ", "ㅜ", "ㅡ"],
@@ -136,9 +136,15 @@ export default function Home() {
     return "bg-gray-400 text-white border-gray-400";
   };
 
+  // 가상 키보드 클릭 이벤트 (백스페이스 동작 처리)
   const handleVirtualKeyClick = (key: string) => {
     if (isGameOver || !key) return;
-    setInputWord((prev) => prev + key);
+
+    if (key === "⌫") {
+      setInputWord((prev) => prev.slice(0, -1));
+    } else {
+      setInputWord((prev) => prev + key);
+    }
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -299,13 +305,19 @@ export default function Home() {
                 const status = jamoStatusMap[key];
                 let btnColor = "bg-white text-gray-800 border-gray-300 hover:bg-gray-100";
 
-                if (status === "green") btnColor = "bg-green-500 text-white border-green-500 font-bold";
-                else if (status === "yellow") btnColor = "bg-amber-400 text-white border-amber-400 font-bold";
-                else if (status === "gray") btnColor = "bg-gray-300 text-gray-500 border-gray-300";
+                if (key === "⌫") {
+                  btnColor = "bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300 font-bold";
+                } else if (status === "green") {
+                  btnColor = "bg-green-500 text-white border-green-500 font-bold";
+                } else if (status === "yellow") {
+                  btnColor = "bg-amber-400 text-white border-amber-400 font-bold";
+                } else if (status === "gray") {
+                  btnColor = "bg-gray-300 text-gray-500 border-gray-300";
+                }
 
                 return (
                   <button
-                    key={key}
+                    key={keyIdx}
                     type="button"
                     onClick={() => handleVirtualKeyClick(key)}
                     className={`flex-1 min-w-[20px] max-w-[36px] h-10 border rounded-md flex items-center justify-center text-xs sm:text-sm font-semibold select-none transition-colors ${btnColor}`}
