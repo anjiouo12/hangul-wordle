@@ -13,6 +13,15 @@ const KEYBOARD_ROWS = [
   ["ㅋ", "ㅌ", "ㅍ", "ㅊ", "ㅠ", "ㅜ", "ㅡ"],
 ];
 
+// QWERTY 키보드 매핑 (영문 입력 상태일 때도 한글 자모로 변환)
+const KEY_MAP: Record<string, string> = {
+  KeyQ: "ㅂ", KeyW: "ㅈ", KeyE: "ㄷ", KeyR: "ㄱ", KeyT: "ㅅ", KeyY: "ㅛ", KeyU: "ㅕ", KeyI: "ㅑ", KeyO: "ㅐ", KeyP: "ㅔ",
+  KeyA: "ㅁ", KeyS: "ㄴ", KeyD: "ㅇ", KeyF: "ㄹ", KeyG: "ㅎ", KeyH: "ㅗ", KeyJ: "ㅓ", KeyK: "ㅏ", KeyL: "ㅣ",
+  KeyZ: "ㅋ", KeyX: "ㅌ", KeyC: "ㅍ", KeyV: "ㅊ", KeyB: "ㅠ", KeyN: "ㅜ", KeyM: "ㅡ",
+  // Shift 조합 (쌍자음 및 대문자 모음)
+  ShiftKeyQ: "ㅃ", ShiftKeyW: "ㅉ", ShiftKeyE: "ㄸ", ShiftKeyR: "ㄲ", ShiftKeyT: "ㅆ", ShiftKeyO: "ㅒ", ShiftKeyP: "ㅖ"
+};
+
 interface Stats {
   played: number;
   won: number;
@@ -20,7 +29,6 @@ interface Stats {
   maxStreak: number;
 }
 
-// 난이도 설정 (쉬움: 5 / 보통: 6 / 어려움: 7)
 const DIFFICULTY_MAP = [
   { label: "쉬움", count: 5 },
   { label: "보통", count: 6 },
@@ -36,7 +44,6 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // 통계 데이터 및 모달 상태
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [stats, setStats] = useState<Stats>({
     played: 0,
@@ -45,7 +52,6 @@ export default function Home() {
     maxStreak: 0,
   });
 
-  // 로컬스토리지에서 기존 기록 로드
   useEffect(() => {
     const savedStats = localStorage.getItem("korean_wordle_stats");
     if (savedStats) {
@@ -68,11 +74,9 @@ export default function Home() {
     setMessage("");
     setIsGameOver(false);
 
-    // 🎯 콘솔창에 정답 및 자모 길이 출력
     console.log(`🎯 [정답 단어]: ${selectedWord} (총 ${disassembled.length}자모)`);
   };
 
-  // 승패 기록 저장 함수
   const updateStats = (isWin: boolean) => {
     setStats((prev) => {
       const newStats: Stats = {
@@ -86,7 +90,6 @@ export default function Home() {
     });
   };
 
-  // 결과 클립보드 복사 함수
   const handleShare = () => {
     const currentDifficulty = DIFFICULTY_MAP.find((d) => d.count === targetJamoCount)?.label || "일반";
     let resultEmoji = `오늘의 한글 워들 [${currentDifficulty}] ${guesses.length}/6\n\n`;
@@ -136,18 +139,19 @@ export default function Home() {
     return "bg-gray-400 text-white border-gray-400";
   };
 
-  // 자모 입력 및 지우기 처리 공통 함수
   const handleInputKey = (key: string) => {
     if (isGameOver) return;
 
     if (key === "⌫" || key === "Backspace") {
       setInputWord((prev) => prev.slice(0, -1));
     } else {
-      // 입력하려는 문자가 유효한 한글 자모인지 검사
-      const currentInputJamos = disassemble(inputWord + key).split("");
-      if (currentInputJamos.length <= targetJamo.length) {
-        setInputWord((prev) => prev + key);
-      }
+      setInputWord((prev) => {
+        const currentInputJamos = disassemble(prev + key).split("");
+        if (currentInputJamos.length <= targetJamo.length) {
+          return prev + key;
+        }
+        return prev;
+      });
     }
   };
 
@@ -181,7 +185,7 @@ export default function Home() {
     }
   };
 
-  // PC 물리 키보드 이벤트 리스너 추가
+  // PC 물리 키보드 입력 핸들러 (한글/영문 자판 및 IME 호환 처리)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isGameOver || showStatsModal) return;
@@ -189,16 +193,29 @@ export default function Home() {
       if (e.key === "Enter") {
         e.preventDefault();
         handleSubmit();
-      } else if (e.key === "Backspace") {
+        return;
+      }
+
+      if (e.key === "Backspace") {
         e.preventDefault();
         handleInputKey("Backspace");
-      } else {
-        // 입력된 키를 disassembled 형태로 변환하여 자모 단위 처리
-        const disassembledKey = disassemble(e.key);
-        // 한글 조합 문자나 완성형 글자 및 개별 자모 입력 처리
-        if (disassembledKey && disassembledKey.length > 0 && /^[ㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(e.key)) {
-          handleInputKey(disassembledKey);
-        }
+        return;
+      }
+
+      // 1. 직접 입력된 한글 자모 또는 한글 단어 분해 처리
+      const disassembledKey = disassemble(e.key);
+      if (disassembledKey && /^[ㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(e.key)) {
+        e.preventDefault();
+        const jamos = disassembledKey.split("");
+        jamos.forEach((jamo) => handleInputKey(jamo));
+        return;
+      }
+
+      // 2. 키보드가 영문 입력(QWERTY) 모드일 때 매핑 처리
+      const mapKey = e.shiftKey ? `Shift${e.code}` : e.code;
+      if (KEY_MAP[mapKey]) {
+        e.preventDefault();
+        handleInputKey(KEY_MAP[mapKey]);
       }
     };
 
@@ -224,7 +241,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 난이도 선택 버튼 (쉬움 / 보통 / 어려움) */}
+        {/* 난이도 선택 버튼 */}
         <div className="flex gap-2 mb-4 w-full justify-center">
           {DIFFICULTY_MAP.map(({ label, count }) => (
             <button
@@ -251,7 +268,6 @@ export default function Home() {
             const isCurrentRow = rowIndex === guesses.length;
             const guess = guesses[rowIndex];
 
-            // 제출된 이전 시도 vs 현재 작성 중인 자모 배열
             const currentJamos = isCurrentRow ? disassemble(inputWord).split("") : [];
             const guessJamos = guess ? disassemble(guess).split("") : [];
 
@@ -285,7 +301,7 @@ export default function Home() {
           })}
         </div>
 
-        {/* 메시지 및 게임 종료 버튼 출력 영역 */}
+        {/* 메시지 및 게임 종료 버튼 영역 */}
         {message && (
           <div className="flex flex-col items-center gap-2 mb-4">
             <p className="font-bold text-sm text-amber-600">{message}</p>
@@ -310,12 +326,11 @@ export default function Home() {
           </div>
         )}
 
-        {/* 4줄 가상 키보드 자판 + 하단 넓은 제출 버튼 */}
+        {/* 가상 키보드 자판 + 제출 버튼 */}
         <div className="flex flex-col gap-1.5 w-full items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
           {KEYBOARD_ROWS.map((row, rowIdx) => (
             <div key={rowIdx} className="flex gap-1 justify-center w-full">
               {row.map((key, keyIdx) => {
-                // 빈 칸 처리
                 if (key === "") {
                   return <div key={keyIdx} className="flex-1 min-w-[20px] max-w-[36px] h-10" />;
                 }
@@ -347,7 +362,6 @@ export default function Home() {
             </div>
           ))}
 
-          {/* 키보드 넓이 및 한 줄 높이(h-10)의 제출 버튼 */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -359,7 +373,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 통계 보기 모달 팝업 */}
+      {/* 통계 모달 */}
       {showStatsModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 rounded-2xl max-w-xs w-full flex flex-col items-center shadow-2xl">
