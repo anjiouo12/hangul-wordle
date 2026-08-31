@@ -136,14 +136,14 @@ export default function Home() {
     return "bg-gray-400 text-white border-gray-400";
   };
 
-  // 가상 키보드 클릭 이벤트
-  const handleVirtualKeyClick = (key: string) => {
-    if (isGameOver || !key) return;
+  // 자모 입력 및 지우기 처리 공통 함수
+  const handleInputKey = (key: string) => {
+    if (isGameOver) return;
 
-    if (key === "⌫") {
+    if (key === "⌫" || key === "Backspace") {
       setInputWord((prev) => prev.slice(0, -1));
     } else {
-      // 자모 개수가 목표 개수를 넘지 않도록 제한
+      // 입력하려는 문자가 유효한 한글 자모인지 검사
       const currentInputJamos = disassemble(inputWord + key).split("");
       if (currentInputJamos.length <= targetJamo.length) {
         setInputWord((prev) => prev + key);
@@ -180,6 +180,31 @@ export default function Home() {
       updateStats(false);
     }
   };
+
+  // PC 물리 키보드 이벤트 리스너 추가
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isGameOver || showStatsModal) return;
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSubmit();
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        handleInputKey("Backspace");
+      } else {
+        // 입력된 키를 disassembled 형태로 변환하여 자모 단위 처리
+        const disassembledKey = disassemble(e.key);
+        // 한글 조합 문자나 완성형 글자 및 개별 자모 입력 처리
+        if (disassembledKey && disassembledKey.length > 0 && /^[ㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(e.key)) {
+          handleInputKey(disassembledKey);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [inputWord, isGameOver, showStatsModal, targetJamo, targetWord, guesses]);
 
   const winRate = stats.played > 0 ? Math.round((stats.won / stats.played) * 100) : 0;
 
@@ -312,7 +337,7 @@ export default function Home() {
                   <button
                     key={keyIdx}
                     type="button"
-                    onClick={() => handleVirtualKeyClick(key)}
+                    onClick={() => handleInputKey(key)}
                     className={`flex-1 min-w-[20px] max-w-[36px] h-10 border rounded-md flex items-center justify-center text-xs sm:text-sm font-semibold select-none transition-colors ${btnColor}`}
                   >
                     {key}
