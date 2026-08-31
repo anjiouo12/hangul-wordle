@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { disassemble } from "es-hangul";
+import { disassemble, assemble } from "es-hangul";
 import confetti from "canvas-confetti";
 import { ALL_WORDS, getRandomWordByJamoCount } from "./words";
 
@@ -168,12 +168,16 @@ export default function Home() {
       return;
     }
 
-    const newGuesses = [...guesses, trimmed];
+    // 자모 배열을 완벽한 한글 단어로 조합
+    const assembledInput = assemble(currentJamo);
+
+    const newGuesses = [...guesses, assembledInput];
     setGuesses(newGuesses);
     setInputWord("");
     setMessage("");
 
-    if (trimmed === targetWord) {
+    // 완성된 단어(assembledInput)와 정답 단어(targetWord) 및 자모 나열값 비교
+    if (assembledInput === targetWord || trimmed === targetJamo.join("")) {
       setMessage("🎉 축하합니다! 정답입니다!");
       setIsGameOver(true);
       updateStats(true);
