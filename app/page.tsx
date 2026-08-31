@@ -17,7 +17,7 @@ const KEYBOARD_ROWS = [
 const KEY_MAP: Record<string, string> = {
   KeyQ: "ㅂ", KeyW: "ㅈ", KeyE: "ㄷ", KeyR: "ㄱ", KeyT: "ㅅ", KeyY: "ㅛ", KeyU: "ㅕ", KeyI: "ㅑ", KeyO: "ㅐ", KeyP: "ㅔ",
   KeyA: "ㅁ", KeyS: "ㄴ", KeyD: "ㅇ", KeyF: "ㄹ", KeyG: "ㅎ", KeyH: "ㅗ", KeyJ: "ㅓ", KeyK: "ㅏ", KeyL: "ㅣ",
-  KeyZ: "ㅋ", KeyX: "ㅌ", KeyC: "ㅍ", KeyV: "ㅊ", KeyB: "ㅠ", KeyN: "ㅜ", KeyM: "ㅡ",
+  KeyZ: "ㅋ", KeyX: "ㅌ", KeyC: "ㅊ", KeyV: "ㅍ", KeyB: "ㅠ", KeyN: "ㅜ", KeyM: "ㅡ",
   // Shift 조합 (쌍자음 및 대문자 모음)
   ShiftKeyQ: "ㅃ", ShiftKeyW: "ㅉ", ShiftKeyE: "ㄸ", ShiftKeyR: "ㄲ", ShiftKeyT: "ㅆ", ShiftKeyO: "ㅒ", ShiftKeyP: "ㅖ"
 };
