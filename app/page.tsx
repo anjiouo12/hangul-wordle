@@ -5,7 +5,7 @@ import { disassemble } from "es-hangul";
 import confetti from "canvas-confetti";
 import { ALL_WORDS, getRandomWordByJamoCount } from "./words";
 
-// 맨 윗줄: ㅖ 왼쪽에 백스페이스(⌫) 배치
+// ㅖ 우측에 백스페이스(⌫) 배치
 const KEYBOARD_ROWS = [
   ["ㅃ", "ㅉ", "ㄸ", "ㄲ", "ㅆ", "", "ㅒ", "ㅖ", "⌫"],
   ["ㅂ", "ㅈ", "ㄷ", "ㄱ", "ㅅ", "ㅛ", "ㅕ", "ㅑ", "ㅐ", "ㅔ"],
@@ -136,19 +136,22 @@ export default function Home() {
     return "bg-gray-400 text-white border-gray-400";
   };
 
-  // 가상 키보드 클릭 이벤트 (백스페이스 동작 처리)
+  // 가상 키보드 클릭 이벤트
   const handleVirtualKeyClick = (key: string) => {
     if (isGameOver || !key) return;
 
     if (key === "⌫") {
       setInputWord((prev) => prev.slice(0, -1));
     } else {
-      setInputWord((prev) => prev + key);
+      // 자모 개수가 목표 개수를 넘지 않도록 제한
+      const currentInputJamos = disassemble(inputWord + key).split("");
+      if (currentInputJamos.length <= targetJamo.length) {
+        setInputWord((prev) => prev + key);
+      }
     }
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSubmit = () => {
     if (isGameOver) return;
 
     const trimmed = inputWord.trim();
@@ -157,7 +160,7 @@ export default function Home() {
     const currentJamo = disassemble(trimmed).split("");
 
     if (currentJamo.length !== targetJamo.length) {
-      setMessage(`⚠️ 자모 ${targetJamo.length}개짜리 단어를 입력해 주세요! (현재 ${currentJamo.length}개)`);
+      setMessage(`⚠️ 자모 ${targetJamo.length}개를 모두 채워주세요! (현재 ${currentJamo.length}개)`);
       return;
     }
 
@@ -220,17 +223,27 @@ export default function Home() {
         {/* 단어 입력 그리드 타일 */}
         <div className="flex flex-col gap-2 mb-6">
           {Array.from({ length: 6 }).map((_, rowIndex) => {
+            const isCurrentRow = rowIndex === guesses.length;
             const guess = guesses[rowIndex];
+
+            // 제출된 이전 시도 vs 현재 작성 중인 자모 배열
+            const currentJamos = isCurrentRow ? disassemble(inputWord).split("") : [];
             const guessJamos = guess ? disassemble(guess).split("") : [];
 
             return (
               <div key={rowIndex} className="flex gap-1.5">
                 {Array.from({ length: targetJamo.length }).map((_, colIndex) => {
-                  const jamo = guessJamos[colIndex] || "";
+                  let displayJamo = "";
                   let colorClass = "bg-white border-gray-300 text-black";
 
                   if (guess) {
-                    colorClass = getJamoStatus(jamo, colIndex);
+                    displayJamo = guessJamos[colIndex] || "";
+                    colorClass = getJamoStatus(displayJamo, colIndex);
+                  } else if (isCurrentRow) {
+                    displayJamo = currentJamos[colIndex] || "";
+                    if (displayJamo) {
+                      colorClass = "bg-white border-gray-600 text-black shadow-sm";
+                    }
                   }
 
                   return (
@@ -238,7 +251,7 @@ export default function Home() {
                       key={colIndex}
                       className={`w-10 h-10 border-2 rounded-lg flex items-center justify-center text-lg font-bold transition-all sm:w-12 sm:h-12 sm:text-xl ${colorClass}`}
                     >
-                      {jamo}
+                      {displayJamo}
                     </div>
                   );
                 })}
@@ -272,27 +285,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 입력 폼 */}
-        <form onSubmit={handleSubmit} className="flex gap-2 w-full mb-6">
-          <input
-            type="text"
-            className="flex-1 border border-gray-300 px-4 py-3 rounded-xl text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder={`${targetJamo.length}자모 단어 입력...`}
-            value={inputWord}
-            onChange={(e) => setInputWord(e.target.value)}
-            disabled={isGameOver}
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={isGameOver}
-            className="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
-          >
-            제출
-          </button>
-        </form>
-
-        {/* 4줄 가상 키보드 자판 */}
+        {/* 4줄 가상 키보드 자판 + 하단 넓은 제출 버튼 */}
         <div className="flex flex-col gap-1.5 w-full items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
           {KEYBOARD_ROWS.map((row, rowIdx) => (
             <div key={rowIdx} className="flex gap-1 justify-center w-full">
@@ -328,6 +321,16 @@ export default function Home() {
               })}
             </div>
           ))}
+
+          {/* 키보드 넓이 및 한 줄 높이(h-10)의 제출 버튼 */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isGameOver}
+            className="w-full h-10 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 disabled:bg-gray-300 transition-colors shadow-sm mt-1"
+          >
+            제출
+          </button>
         </div>
       </div>
 
