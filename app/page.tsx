@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { disassemble, assemble } from "es-hangul";
 import confetti from "canvas-confetti";
-import { ALL_WORDS, getRandomWordByJamoCount } from "./words";
+import { ALL_WORDS, getRandomWordByJamoCount, WordItem } from "./words";
 
 // ㅖ 우측에 백스페이스(⌫) 배치
 const KEYBOARD_ROWS = [
@@ -38,6 +38,7 @@ const DIFFICULTY_MAP = [
 export default function Home() {
   const [selectedDifficulty, setSelectedDifficulty] = useState(DIFFICULTY_MAP[1]); // 기본: 보통 (6~8자모)
   const [targetWord, setTargetWord] = useState("");
+  const [targetDescription, setTargetDescription] = useState(""); // 정답 설명 상태 추가
   const [targetJamo, setTargetJamo] = useState<string[]>([]);
   const [inputWord, setInputWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
@@ -64,17 +65,18 @@ export default function Home() {
   }, [selectedDifficulty]);
 
   const startNewGame = (min: number, max: number) => {
-    const selectedWord = getRandomWordByJamoCount(min, max);
-    const disassembled = disassemble(selectedWord).split("");
+    const selectedItem: WordItem = getRandomWordByJamoCount(min, max);
+    const disassembled = disassemble(selectedItem.word).split("");
     
-    setTargetWord(selectedWord);
+    setTargetWord(selectedItem.word);
+    setTargetDescription(selectedItem.description);
     setTargetJamo(disassembled);
     setGuesses([]);
     setInputWord("");
     setMessage("");
     setIsGameOver(false);
 
-    console.log(`🎯 [정답 단어]: ${selectedWord} (총 ${disassembled.length}자모)`);
+    console.log(`🎯 [정답 단어]: ${selectedItem.word} (${selectedItem.description})`);
   };
 
   const updateStats = (isWin: boolean) => {
@@ -299,12 +301,21 @@ export default function Home() {
           })}
         </div>
 
-        {/* 메시지 및 게임 종료 버튼 영역 */}
+        {/* 메시지 및 정답 설명 / 게임 종료 영역 */}
         {message && (
-          <div className="flex flex-col items-center gap-2 mb-4">
+          <div className="flex flex-col items-center gap-2 mb-4 w-full text-center">
             <p className="font-bold text-sm text-amber-600">{message}</p>
+            
+            {/* 정답 단어 설명 표시 박스 */}
+            {isGameOver && targetDescription && (
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl w-full my-1">
+                <p className="text-xs font-bold text-blue-900 mb-1">💡 [{targetWord}] 뜻풀이</p>
+                <p className="text-xs text-blue-800 leading-relaxed">{targetDescription}</p>
+              </div>
+            )}
+
             {isGameOver && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-1">
                 <button
                   type="button"
                   onClick={handleShare}
