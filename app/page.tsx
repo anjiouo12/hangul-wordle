@@ -18,7 +18,6 @@ const KEY_MAP: Record<string, string> = {
   KeyQ: "ㅂ", KeyW: "ㅈ", KeyE: "ㄷ", KeyR: "ㄱ", KeyT: "ㅅ", KeyY: "ㅛ", KeyU: "ㅕ", KeyI: "ㅑ", KeyO: "ㅐ", KeyP: "ㅔ",
   KeyA: "ㅁ", KeyS: "ㄴ", KeyD: "ㅇ", KeyF: "ㄹ", KeyG: "ㅎ", KeyH: "ㅗ", KeyJ: "ㅓ", KeyK: "ㅏ", KeyL: "ㅣ",
   KeyZ: "ㅋ", KeyX: "ㅌ", KeyC: "ㅊ", KeyV: "ㅍ", KeyB: "ㅠ", KeyN: "ㅜ", KeyM: "ㅡ",
-  // Shift 조합 (쌍자음 및 대문자 모음)
   ShiftKeyQ: "ㅃ", ShiftKeyW: "ㅉ", ShiftKeyE: "ㄸ", ShiftKeyR: "ㄲ", ShiftKeyT: "ㅆ", ShiftKeyO: "ㅒ", ShiftKeyP: "ㅖ"
 };
 
@@ -168,7 +167,6 @@ export default function Home() {
       return;
     }
 
-    // 자모 배열을 완벽한 한글 단어로 조합
     const assembledInput = assemble(currentJamo);
 
     const newGuesses = [...guesses, assembledInput];
@@ -176,7 +174,6 @@ export default function Home() {
     setInputWord("");
     setMessage("");
 
-    // 완성된 단어(assembledInput)와 정답 단어(targetWord) 및 자모 나열값 비교
     if (assembledInput === targetWord || trimmed === targetJamo.join("")) {
       setMessage("🎉 축하합니다! 정답입니다!");
       setIsGameOver(true);
@@ -189,7 +186,6 @@ export default function Home() {
     }
   };
 
-  // PC 물리 키보드 입력 핸들러 (한글/영문 자판 및 IME 호환 처리)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isGameOver || showStatsModal) return;
@@ -206,7 +202,6 @@ export default function Home() {
         return;
       }
 
-      // 1. 직접 입력된 한글 자모 또는 한글 단어 분해 처리
       const disassembledKey = disassemble(e.key);
       if (disassembledKey && /^[ㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(e.key)) {
         e.preventDefault();
@@ -215,7 +210,6 @@ export default function Home() {
         return;
       }
 
-      // 2. 키보드가 영문 입력(QWERTY) 모드일 때 매핑 처리
       const mapKey = e.shiftKey ? `Shift${e.code}` : e.code;
       if (KEY_MAP[mapKey]) {
         e.preventDefault();
@@ -331,7 +325,7 @@ export default function Home() {
         )}
 
         {/* 가상 키보드 자판 + 제출 버튼 */}
-        <div className="flex flex-col gap-1.5 w-full items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+        <div className="flex flex-col gap-1.5 w-full items-center bg-gray-50 p-3 rounded-xl border border-gray-200 mb-6">
           {KEYBOARD_ROWS.map((row, rowIdx) => (
             <div key={rowIdx} className="flex gap-1 justify-center w-full">
               {row.map((key, keyIdx) => {
@@ -374,6 +368,55 @@ export default function Home() {
           >
             제출
           </button>
+        </div>
+
+        {/* 👇 새로 추가된 게임 설명 영역 */}
+        <div className="w-full bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-col gap-3">
+          <h2 className="font-extrabold text-sm text-gray-800 flex items-center gap-1.5">
+            📖 게임 설명
+          </h2>
+          
+          <ul className="list-disc pl-4 space-y-1.5 leading-relaxed">
+            <li>
+              <b>총 6번의 기회</b> 안에 숨겨진 <b>소방 관련 단어</b>를 맞춰보세요.
+            </li>
+            <li>
+              단어는 글자 수가 아닌 <b>자모(초성·중성·종성) 단위</b>로 나누어 입력됩니다.
+              <br />
+              <span className="text-gray-400 font-mono text-[11px]">(예: 소방관 ➔ ㅅ, ㅗ, ㅂ, ㅏ, ㅇ, ㄱ, ㅘ, ㄴ)</span>
+            </li>
+            <li>
+              제출 후 각 타일의 색상이 변경되며 정답에 대한 힌트를 제공합니다.
+            </li>
+          </ul>
+
+          <hr className="border-gray-200 my-1" />
+
+          {/* 색상 힌트 가이드 */}
+          <div className="flex flex-col gap-2">
+            <span className="font-bold text-gray-700">💡 타일 색상 안내</span>
+            
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded bg-green-500 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+                ㅅ
+              </span>
+              <span><b>초록색:</b> 자모가 정답에 포함되어 있고 <b>위치도 일치</b>합니다.</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded bg-amber-400 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+                ㅗ
+              </span>
+              <span><b>노란색:</b> 자모가 정답에 포함되어 있지만 <b>위치가 다릅니다</b>.</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded bg-gray-400 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+                ㅂ
+              </span>
+              <span><b>회색:</b> 해당 자모는 정답에 <b>포함되지 않습니다</b>.</span>
+            </div>
+          </div>
         </div>
       </div>
 
