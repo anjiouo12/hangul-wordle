@@ -93,7 +93,7 @@ export default function Home() {
   };
 
   const handleShare = () => {
-    let resultEmoji = `오늘의 소방 워들 [${selectedDifficulty.label}] ${guesses.length}/6\n\n`;
+    let resultEmoji = `오늘의 소방 단어 퀴즈 [${selectedDifficulty.label}] ${guesses.length}/6\n\n`;
 
     guesses.forEach((guess) => {
       const guessJamos = disassemble(guess).split("");
@@ -230,7 +230,7 @@ export default function Home() {
       <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
         {/* 상단 제목 & 통계 버튼 */}
         <div className="flex justify-between items-center w-full mb-2 px-1">
-          <h1 className="text-3xl font-black text-gray-800">오늘의 소방 워들 🎯</h1>
+          <h1 className="text-3xl font-black text-gray-800">오늘의 소방 단어 🎯</h1>
           <button
             type="button"
             onClick={() => setShowStatsModal(true)}
