@@ -1,24 +1,11 @@
-// 한글 초성/중성/종성 분해 함수 (자모 개수 정확 계산)
-export function getJamoCount(word: string): number {
-  let count = 0;
-  for (let i = 0; i < word.length; i++) {
-    const code = word.charCodeAt(i) - 0xac00;
-    if (code >= 0 && code <= 11172) {
-      const cho = Math.floor(code / 588);
-      const jung = Math.floor((code - cho * 588) / 28);
-      const jong = code % 28;
+import { disassemble } from "es-hangul";
 
-      count += 1; // 초성 (무조건 1개)
-      count += 1; // 중성 (기본 1개)
-      if (jong > 0) count += 1; // 종성(받침) 있을 시 +1개
-    }
-  }
-  return count;
+// 한글 초성/중성/종성 분해 기반 자모 개수 정확 계산 함수
+export function getJamoCount(word: string): number {
+  return disassemble(word).length;
 }
 
 // 소방 관련 단어 데이터베이스
-// ※ 자모 수는 "받침 유무/음절 수" 기준으로 근사하게 맞춘 것이며, 정밀한 자모 개수 검증은 별도 확인이 필요합니다.
-
 export const ALL_WORDS = [
   // --- 5자모 계열 (받침 없는 2음절 위주) ---
   "화재", "소화", "방화", "진화", "피난", "대피", "화상", "화기", "화력", "화염",
@@ -43,7 +30,7 @@ export const ALL_WORDS = [
   "불연재", "난연재", "내화벽", "내화도료", "방염커튼", "방염카펫", "소방수",
   "급수탑", "저수조", "가압펌프", "동력펌프", "수원", "송수구", "방수구", "관창",
   "호스릴", "소방호스", "소방펌프", "화재하중", "피난계단", "피난구", "피난층",
-  "임시피난", "화재조사", "화재원인", "실화죄", "방화죄", "소방시설", "자동화재",
+  "임시피난", "화재조사", "화재원인", "방화죄", "소방시설", "자동화재",
 
   // --- 7자모 이상 계열 (3음절 이상) ---
   "화재감지기", "가스누출감지기", "자동화재탐지설비", "자동화재속보설비",
@@ -51,7 +38,7 @@ export const ALL_WORDS = [
   "이산화탄소소화설비", "할론소화설비", "분말소화설비", "고체에어로졸",
   "연결살수설비", "연결송수관설비", "비상방송설비", "비상조명등", "유도등",
   "유도표지", "휴대용비상조명등", "제연설비", "특별피난계단", "피난기구",
-  "완강기구", "구조대설비", "공기안전매트", "미끄럼대", "인명구조기구",
+  "완강기구", "구조대설비", "공기안전매트", "인명구조기구",
   "방열복", "공기호흡기", "인공소생기", "축광표지", "예비전원", "비상전원",
   "자가발전설비", "축전지설비", "비상콘센트설비", "무선통신보조설비",
   "소방시설관리업", "소방공사업", "소방시설설계업", "소방시설감리업",
@@ -64,12 +51,16 @@ export const ALL_WORDS = [
   "한국소방시설협회", "소방산업기술원", "한국소방안전원", "소방청고시",
 ];
 
-// 사용자가 선택한 칸 수(targetCount)에 맞춰 단어를 자동 추출하는 함수
-export function getRandomWordByJamoCount(targetCount: number): string {
-  const filtered = ALL_WORDS.filter((word) => getJamoCount(word) === targetCount);
+// 지정한 자모 수 범위(min ~ max)에 맞춰 무작위 단어를 뽑는 함수
+export function getRandomWordByJamoCount(min: number, max: number): string {
+  const filtered = ALL_WORDS.filter((word) => {
+    const count = getJamoCount(word);
+    return count >= min && count <= max;
+  });
 
+  // 해당 범위 조건에 맞는 단어가 없을 경우 예외 처리
   if (filtered.length === 0) {
-    return targetCount === 5 ? "사과" : targetCount === 6 ? "학교" : "자동차";
+    return ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
   }
 
   const randomIndex = Math.floor(Math.random() * filtered.length);

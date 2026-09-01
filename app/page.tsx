@@ -28,14 +28,15 @@ interface Stats {
   maxStreak: number;
 }
 
+// 난이도별 자모 수 범위 설정 (쉬움: 4~5 / 보통: 6~8 / 어려움: 9~12)
 const DIFFICULTY_MAP = [
-  { label: "쉬움", count: 5 },
-  { label: "보통", count: 6 },
-  { label: "어려움", count: 7 },
+  { label: "쉬움", min: 4, max: 5 },
+  { label: "보통", min: 6, max: 8 },
+  { label: "어려움", min: 9, max: 12 },
 ];
 
 export default function Home() {
-  const [targetJamoCount, setTargetJamoCount] = useState<number>(6);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(DIFFICULTY_MAP[1]); // 기본: 보통 (6~8자모)
   const [targetWord, setTargetWord] = useState("");
   const [targetJamo, setTargetJamo] = useState<string[]>([]);
   const [inputWord, setInputWord] = useState("");
@@ -59,11 +60,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    startNewGame(targetJamoCount);
-  }, [targetJamoCount]);
+    startNewGame(selectedDifficulty.min, selectedDifficulty.max);
+  }, [selectedDifficulty]);
 
-  const startNewGame = (count: number) => {
-    const selectedWord = getRandomWordByJamoCount(count);
+  const startNewGame = (min: number, max: number) => {
+    const selectedWord = getRandomWordByJamoCount(min, max);
     const disassembled = disassemble(selectedWord).split("");
     
     setTargetWord(selectedWord);
@@ -90,8 +91,7 @@ export default function Home() {
   };
 
   const handleShare = () => {
-    const currentDifficulty = DIFFICULTY_MAP.find((d) => d.count === targetJamoCount)?.label || "일반";
-    let resultEmoji = `오늘의 소방 워들 [${currentDifficulty}] ${guesses.length}/6\n\n`;
+    let resultEmoji = `오늘의 소방 워들 [${selectedDifficulty.label}] ${guesses.length}/6\n\n`;
 
     guesses.forEach((guess) => {
       const guessJamos = disassemble(guess).split("");
@@ -241,17 +241,17 @@ export default function Home() {
 
         {/* 난이도 선택 버튼 */}
         <div className="flex gap-2 mb-4 w-full justify-center">
-          {DIFFICULTY_MAP.map(({ label, count }) => (
+          {DIFFICULTY_MAP.map((diff) => (
             <button
-              key={label}
-              onClick={() => setTargetJamoCount(count)}
+              key={diff.label}
+              onClick={() => setSelectedDifficulty(diff)}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                targetJamoCount === count
+                selectedDifficulty.label === diff.label
                   ? "bg-blue-600 text-white shadow-md scale-105"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {label}
+              {diff.label}
             </button>
           ))}
         </div>
@@ -270,7 +270,7 @@ export default function Home() {
             const guessJamos = guess ? disassemble(guess).split("") : [];
 
             return (
-              <div key={rowIndex} className="flex gap-1.5">
+              <div key={rowIndex} className="flex gap-1.5 justify-center">
                 {Array.from({ length: targetJamo.length }).map((_, colIndex) => {
                   let displayJamo = "";
                   let colorClass = "bg-white border-gray-300 text-black";
@@ -288,7 +288,7 @@ export default function Home() {
                   return (
                     <div
                       key={colIndex}
-                      className={`w-10 h-10 border-2 rounded-lg flex items-center justify-center text-lg font-bold transition-all sm:w-12 sm:h-12 sm:text-xl ${colorClass}`}
+                      className={`w-8 h-8 border-2 rounded-lg flex items-center justify-center text-sm font-bold transition-all sm:w-10 sm:h-10 sm:text-lg ${colorClass}`}
                     >
                       {displayJamo}
                     </div>
@@ -314,7 +314,7 @@ export default function Home() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => startNewGame(targetJamoCount)}
+                  onClick={() => startNewGame(selectedDifficulty.min, selectedDifficulty.max)}
                   className="bg-gray-700 hover:bg-gray-800 text-white text-xs px-3 py-2 rounded-lg font-bold shadow"
                 >
                   🔄 다시 하기
@@ -370,7 +370,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 👇 새로 추가된 게임 설명 영역 */}
+        {/* 게임 설명 영역 */}
         <div className="w-full bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-col gap-3">
           <h2 className="font-extrabold text-sm text-gray-800 flex items-center gap-1.5">
             📖 게임 설명
